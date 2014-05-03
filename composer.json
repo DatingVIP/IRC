@@ -1,5 +1,5 @@
 {
-    "name": "DatingVIP/IRC",
+    "name": "datingvip/irc",
     "type": "library",
     "description": "IRC Bot",
     "keywords": ["irc"],
