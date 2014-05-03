@@ -14,19 +14,20 @@ Codez
 <?php
 require_once("vendor/autoload.php");
 
-use DatingVIP\IRC\Connection as IRC;
-use DatingVIP\IRC\Message;
+use DatingVIP\IRC\Connection;
 use DatingVIP\IRC\Listener;
-use DatingVIP\IRC\Responder;
 use DatingVIP\IRC\Logger;
+use DatingVIP\IRC\Message;
+use DatingVIP\IRC\Responder;
+use DatingVIP\IRC\Robot;
 
-class IO implements Logger {
+class Log implements Logger {
 	public function onSend($line)    { printf("> %s\n", $line); }
 	public function onReceive($line) { printf("< %s\n", $line); }
 }
 
 class Respond extends Responder {
-	public function __construct(IRC $irc, Message $msg) {
+	public function __construct(Connection $irc, Message $msg) {
 		$this->irc = $irc;
 		$this->msg = $msg;
 	}
@@ -55,7 +56,7 @@ class Listen implements Listener {
 		$this->nick = $nick;
 	}
 	
-	public function onReceive(IRC $irc, Message $msg) {
+	public function onReceive(Connection $irc, Message $msg) {
 		if ($msg->getType() == "PRIVMSG" &&
 			$msg->getNick() == $this->nick) {
 			/* returning a responder object 
@@ -69,19 +70,22 @@ class Listen implements Listener {
 
 set_time_limit(0);
 
-/* connect to server */
-$irc = new IRC("irc.efnet.org", 6667);
+/* open connection to server */
+$connection = new Connection("irc.efnet.org", 6667);
 
-/* set logger */
-$irc->setLogger(new IO());
+/* make sure we see all input/output */
+$connection->setLogger(new Log());
+
+/* create robot with default pool */
+$robot = new Robot($connection, new Pool(4));
 
 /* add listeners */
-$irc->addListener(
-	new Listen("test-user"));
+$robot->addListener(
+	new Listen("test-user2"));
 
 /* login, join channels and enter main loop */
-$irc->login("bot")
-	->join("#some-channel")
-	->loop(true);
+$robot->login("bot")
+	->join("#devs")
+	->loop();
 ?>
 ```
