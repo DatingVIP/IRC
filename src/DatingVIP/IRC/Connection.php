@@ -1,23 +1,23 @@
 <?php
 namespace DatingVIP\IRC;
 
-class Connection {
+class Connection extends \Threaded {
 /**
  * Constructs a connection to the specified server
  * @param string  server
  * @param integer port
  * @param boolean ssl
- * @param integer timeout
+ * @param integer threads
  * @throws \RuntimeException
  */
-	public function __construct($server, $port, $ssl = false, $timeout = 5) {
+	public function __construct($server, $port, $ssl = false, $threads = 4) {
 		$this->server = $server;
 		$this->port   = $port;
 		
 		if ($ssl) {
 			$this->handle = stream_socket_client(
 				"tls://{$server}:{$port}",
-				$errno, $errstr, $timeout, STREAM_CLIENT_CONNECT, 
+				$errno, $errstr, self::getTimeout(), STREAM_CLIENT_CONNECT,
 				stream_context_create(array(
 					"ssl" => array(
 						"allow_self_signed" => true,
@@ -26,13 +26,17 @@ class Connection {
 			)));
 		} else {
 			$this->handle = stream_socket_client(
-				"tcp://{$server}:{$port}", $errno, $errstr, $timeout);
+				"tcp://{$server}:{$port}", 
+				$errno, $errstr, self::getTimeout());
 		}
 		
 		if (!$this->handle) {
 			throw new \RuntimeException(
 				"failed to open server {$server}:{$port} {$errstr}");
 		}
+		
+		$this->listeners = new \Threaded();
+		$this->pool      = new \Pool($threads);
 	}
 
 /**
@@ -88,12 +92,12 @@ class Connection {
 	
 /**
  * Enter into IO loop
- * @param boolean main
+ * @param boolean|callable main
  * @return Connection
  * @throws \RuntimeException
  */
 	public function loop($main = false) {
-		while (($line = fgets($this->handle)) && ($line = trim($line))) {
+		while (($line = $this->recv())) {
 			if ($this->logger) {
 				$this->logger
 					->onReceive($line);
@@ -106,25 +110,33 @@ class Connection {
 				}
 			} else {
 				$message = new Message($line);
+				
 				foreach ($this->listeners as $listener) {
-					if ($listener->onReceive($this, $message))
-						break;
+					$response = $listener
+						->onReceive($this, $message);
+					if ($response) {
+						if (($response instanceof Responder)) {
+							$this->pool
+								->submit($response);
+							continue;
+						}
+						
+						throw new \RuntimeException(sprintf(
+							"%s returned an invalid response, ".
+							"expected Collectable object",
+							get_class($listener)));
+					}
 				}
 			}
 			
 			if ($main < 0)
 				return $this;
 		}
-		
-		if ($main && !$line) {
-			throw new \RuntimeException(
-				"failed to read from {$this->server}");
-		}
-		
+
 		return $main ?
 			$this->loop($main) : $this;
 	}
-	
+
 /**
  * Set the logging object
  * @param Logger logger
@@ -133,7 +145,7 @@ class Connection {
 	public function setLogger(Logger $logger) { 
 		$this->logger = 
 			$logger;
-		return $this; 
+		return $this;
 	}
 
 /**
@@ -186,10 +198,40 @@ class Connection {
 		return true;
 	}
 	
+/**
+ * Recv from stream
+ * @return string
+ * @throws \RuntimeException
+ */
+	protected function recv() {
+		if (($line = fgets($this->handle)) && 
+			($line = trim($line))) {
+			return $line;
+		}
+		
+		throw new \RuntimeException(
+			"failed to receive data from {$this->server}");
+	}
+	
+/**
+ * Set global connect timeout in seconds
+ * @param int timeout
+ * @throws \RuntimeException
+ */
+	public static function setTimeout($timeout) { self::$timeout = $timeout; }
+
+/**
+ * Get global connect timeout in seconds
+ * @param int timeout
+ * @throws \RuntimeException
+ */
+	public static function getTimeout() { return self::$timeout; }
+
 	public $server;
 	public $port;
 	public $handle;
 	public $logger;
 	public $listeners;
+	public static $timeout = 5;
 }
 ?>
