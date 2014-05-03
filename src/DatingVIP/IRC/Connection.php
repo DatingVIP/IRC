@@ -116,6 +116,11 @@ class Connection {
 				return $this;
 		}
 		
+		if ($main && !$line) {
+			throw new \RuntimeException(
+				"failed to read from {$this->server}");
+		}
+		
 		return $main ?
 			$this->loop($main) : $this;
 	}
