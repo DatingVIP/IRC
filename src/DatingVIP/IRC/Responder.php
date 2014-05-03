@@ -1,11 +1,11 @@
 <?php
 namespace DatingVIP\IRC;
 
-abstract class Responder extends \Threaded implements Collectable {
+abstract class Responder extends \Threaded {
 	abstract public function onRespond();
 
 	final public function run() { 
-		$this->onRespond(); 
+		$this->onRespond();
 		$this
 			->setGarbage();
 	}
