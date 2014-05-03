@@ -1,0 +1,24 @@
+{
+    "name": "DatingVIP/IRC",
+    "type": "library",
+    "description": "IRC Bot",
+    "keywords": ["irc"],
+    "homepage": "https://github.com/DatingVIP/IRC",
+    "license": "LGPLv3",
+    "authors": [
+        {
+            "name": "Joe Watkins",
+            "email": "joe@firstbeatmedia.com",
+            "homepage": "http://firstbeatmedia.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.0.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "DatingVIP": "src"
+        }
+    }
+}
