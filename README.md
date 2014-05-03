@@ -10,7 +10,7 @@ Codez
 =====
 *U can haz codez ...*
 
-```
+```php
 <?php
 require_once("vendor/autoload.php");
 
