@@ -4,10 +4,10 @@ namespace DatingVIP\IRC;
 interface Listener {
 /**
  * Receives Messages from Connection
- * @param Connection connection
+ * @param Connection robot
  * @param Message msg
- * @return \Threaded
+ * @return Responder
  */
-	public function onReceive(Connection $connection, Message $msg);
+	public function onReceive(Connection $robot, Message $msg);
 }
 ?>
