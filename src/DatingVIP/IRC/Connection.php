@@ -42,8 +42,9 @@ class Connection extends \Threaded {
  * @param string command
  * @return Connection
  * @throws \RuntimeException
+ * @access synchronized
  */
-	public function send($command) {
+	protected function send($command) {
 		if ($this->logger) {
 			$this->logger
 				->onSend($command);
@@ -63,8 +64,9 @@ class Connection extends \Threaded {
  * Recv response from server
  * @return string
  * @throws \RuntimeException
+ * @access synchronized
  */
-	public function recv() {
+	protected function recv() {
 		if (($line = fgets($this->handle)) && 
 			($line = trim($line))) {
 			if ($this->logger) {
@@ -85,8 +87,9 @@ class Connection extends \Threaded {
  * @param string message
  * @return Connection
  * @throws \RuntimeException
+ * @access synchronized
  */
-	public function msg($to, $message) {
+	protected function msg($to, $message) {
 		if (!$this->send("PRIVMSG {$to} {$message}")) {
 			throw new \RuntimeException(
 				"failed to send message {$message} to {$to}");
