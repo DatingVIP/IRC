@@ -64,14 +64,14 @@ class Connection extends \Threaded {
 				"failed to set nick {$nick} on {$this->server}");
 		}
 		
-		$this->loop(-1);
+		$this->loop(false);
 		
 		if (!$this->send("USER {$nick} AS IRC BOT")) {
 			throw new \RuntimeException(
 				"failed to set user {$nick} on {$this->server}");
 		}
 		
-		$this->loop(-1);
+		$this->loop(false);
 		
 		return $this;
 	}
@@ -92,12 +92,18 @@ class Connection extends \Threaded {
 	
 /**
  * Enter into IO loop
- * @param boolean|callable main
+ * @param boolean main
  * @return Connection
  * @throws \RuntimeException
  */
-	public function loop($main = false) {
+	public function loop($main = true) {
 		while (($line = $this->recv())) {
+			if ($main) {
+				$this->pool->collect(function(Responder $responder) {
+					return $responder->isGarbage();
+				});
+			}
+			
 			if ($this->logger) {
 				$this->logger
 					->onReceive($line);
@@ -110,7 +116,7 @@ class Connection extends \Threaded {
 				}
 			} else {
 				$message = new Message($line);
-				
+
 				foreach ($this->listeners as $listener) {
 					$response = $listener
 						->onReceive($this, $message);
@@ -129,11 +135,11 @@ class Connection extends \Threaded {
 				}
 			}
 			
-			if ($main < 0)
-				return $this;
+			if (!$main)
+				break;
 		}
 
-		return $main ?
+		return $main ? 
 			$this->loop($main) : $this;
 	}
 
