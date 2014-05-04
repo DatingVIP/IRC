@@ -103,7 +103,7 @@ class Robot {
 						
 						throw new \RuntimeException(sprintf(
 							"%s returned an invalid response, ".
-							"expected Collectable object",
+							"expected Responder object",
 							get_class($listener)));
 					}
 				}
