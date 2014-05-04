@@ -9,8 +9,8 @@ class Robot {
  */
 	public function __construct(Connection $connection, \Pool $pool) {
 		$this->connection = $connection;
-		$this->pool      = $pool;
-		$this->listeners = [];
+		$this->pool       = $pool;
+		$this->listeners  = [];
 	}
 
 /**
