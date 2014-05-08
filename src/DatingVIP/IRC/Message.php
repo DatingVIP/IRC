@@ -3,27 +3,20 @@ namespace DatingVIP\IRC;
 
 class Message {
 	public function __construct($line) {
-		if (preg_match(MESSAGE::REGEXP, $line, $match)) {
-			switch ($match[2]) {
-				case "!":
-					/* user message */
-					$this->nick    = $match[1];
-					$this->host    = $match[3];
-					$this->type    = $match[4];
-					$this->chan    = $match[5];
-					$this->text    = $match[6];
-				break;
-				
-				default:
-					/* server message */
-					$this->host    = $match[1];
-					$this->type    = $match[3];
-					$this->nick    = $match[4];
-					$this->chan    = $match[5];
-					$this->text    = $match[6];
+		if (preg_match("~:([^:]+):?(.*)~", $line, $match)) {
+			$match[1]      = preg_split("~ +~", $match[1]);
+			$match[1][0]   = preg_split("~!~", $match[1][0], 2);
+			
+			switch (count($match[1][0])) {
+				case 2: $this->nick = array_shift($match[1][0]);
+				case 1: $this->host = array_shift($match[1][0]);
 			}
+			
+			$this->type    = $match[1][1];
+			$this->chan    = $match[1][2];
+			$this->text    = $match[2];
+			$this->line    = $line;
 		}
-		$this->line = $line;
 	}
 	
 	public function getLine()    { return $this->line; }
@@ -39,7 +32,5 @@ class Message {
 	protected $nick;
 	protected $chan;
 	protected $text;
-	
-	const REGEXP = "~^:?([^ ]+)([!| ])([^ ]+) ([^ ]+) ([^ ]+) :?(.*)$~";
 }
 ?>
