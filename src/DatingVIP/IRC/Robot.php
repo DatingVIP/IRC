@@ -112,8 +112,10 @@ class Robot {
 			if (!$main)
 				break;
 
-			$this->pool->collect(function(Responder $responder) {
-				return $responder->isGarbage();
+			$this->pool->collect(function($responder) {
+				if ($responder instanceof Responder) {
+					return $responder->isGarbage();
+				} else return true;
 			});
 		}
 
