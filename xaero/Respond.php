@@ -17,7 +17,7 @@ class Respond extends Responder {
 
 	public function onRespond() {
 		$this->irc->msg($this->msg->getNick(), $this->msg->getText());
-		// $this->irc->msg($this->msg->getChannel(), sprintf('%s said "%s" to %s', __CLASS__, $this->msg->getText(), $this->msg->getNick()));
+		$this->irc->msg($this->msg->getChannel(), sprintf('%s said "%s" to %s', __CLASS__, $this->msg->getText(), $this->msg->getNick()));
 	}
 }
 ?>
