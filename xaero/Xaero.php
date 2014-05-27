@@ -1,7 +1,7 @@
 <?php
 namespace xaero;
 
-// require_once('Chat.php');
+require_once('Chat.php');
 require_once('User.php');
 
 use DatingVIP\IRC\Message;
@@ -10,15 +10,11 @@ use DatingVIP\IRC\Robot;
 class Xaero extends Robot {
 
 	private $users = array();
-	// private $chats = array();
+	private $chats = array();
 
 	private function command($message) {
 
 		$nick = $message->getNick();
-		if(!isset($this->users[$nick])) {
-			$this->users[$nick] = new User($nick);
-		}
-
 		$arguments = explode(' ', $message->getText());
 		$command = substr(array_shift($arguments), 1);
 
@@ -47,11 +43,30 @@ class Xaero extends Robot {
 					'Available commands:',
 					'@away [time] [reason] - Sets your status away, if time is supplied (5m, 1h, 1h30m) there\'s no need to issue @back command',
 					'@back - Removes away status (gets you back to work)',
-					'@name - Sets your name',
+					'@last [size]=10 [nick] - Retrieves latest chats, optionally filtered by nick',
+					'@name <name> - Sets your name',
 					'@off - Signs you off',
 					'@on [task] - Signs you in and sets your current task',
 					'@who - Lists users and their statuses'
 				);
+				break;
+
+			case 'last':
+				$size = 10;
+				$nick = '';
+				if(count($arguments)) {
+					if(preg_match('/^[0-9]$/', $arguments[0])) {
+						$size = array_shift($arguments);
+					}
+					if(count($arguments)) {
+						$nick = array_shift($arguments);
+					}
+				}
+				if(strlen($nick)) {
+					$response = $this->getLast($size, $nick);
+				} else {
+					$response = $this->getLast($size);
+				}
 				break;
 
 			case 'name':
@@ -86,6 +101,26 @@ class Xaero extends Robot {
 		}
 	}
 
+	private function getLast($size, $nick = '') {
+
+		if($size <= 0) { return; }
+
+		if(strlen($nick) && !isset($this->users[$nick])) { return; }
+
+		$last = array();
+		foreach(array_reverse($this->chats) as $chat) {
+			if(strlen($nick) && strcmp($chat->nick, $nick)) {
+				continue;
+			}
+			$last[] = $chat->nick . ': ' . $chat->text . ' [' . $chat->getTime() . ' ago]';
+			if(!--$size) {
+				break;
+			}
+		}
+
+		return array_reverse($last);
+	}
+
 	public function loop($main = true) {
 
 		while(($line = $this->connection->recv())) {
@@ -97,6 +132,10 @@ class Xaero extends Robot {
 			} else {
 				$message = new Message($line);
 				if($message->getType() == 'PRIVMSG') {
+					$nick = $message->getNick();
+					if(!isset($this->users[$nick])) {
+						$this->users[$nick] = new User($nick);
+					}
 					$text = trim($message->getText());
 					if(!strcmp($text[0], '@')) {
 						$response = $this->command($message);
@@ -111,8 +150,8 @@ class Xaero extends Robot {
 							}
 						}
 					} else {
-						// $chat = new Chat($message->getNick(), $text);
-						// $this->chats[] = $chat;
+						$chat = new Chat($message->getNick(), $text);
+						$this->chats[] = $chat;
 					}
 				}
 			}
