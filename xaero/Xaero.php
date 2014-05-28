@@ -55,7 +55,7 @@ class Xaero extends Robot {
 				$size = 10;
 				$nick = '';
 				if(count($arguments)) {
-					if(preg_match('/^[0-9]$/', $arguments[0])) {
+					if(preg_match('/^[0-9]+$/', $arguments[0])) {
 						$size = array_shift($arguments);
 					}
 					if(count($arguments)) {
