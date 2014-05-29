@@ -13,7 +13,7 @@ class User {
 
 	private $sign_in = 0;
 	private $sign_out = 0;
-	private $working_on = '';
+	private $task = '';
 
 	private $away_until = 0;
 	private $away_reason = '';
@@ -65,13 +65,23 @@ class User {
 					$this->back();
 				}
 			}
+			if($this->status == OFF) {
+				if(time() - $this->sign_out > 86400) {
+					$this->sign_in = 0;
+					$this->sign_out = 0;
+					$this->task = '';
+					$this->away_until = 0;
+					$this->away_reason = '';
+					return false;
+				}
+			}
 			$status = (isset($this->name) ? $this->name : $this->nick) . ' is ';
 			if($this->status == OFF) {
 				$status .= 'off since ' . $this->secondsToString((time() - $this->sign_out)) . ' ago.';
 			} else {
 				$status .= 'working since ' . $this->secondsToString((time() - $this->sign_in)) . ' ago';
-				if(strlen($this->working_on)) {
-					$status .= ', working on \'' . $this->working_on . '\'';
+				if(strlen($this->task)) {
+					$status .= ', working on \'' . $this->task . '\'';
 				}
 				if($this->status == AWAY) {
 					$status .= ', away';
@@ -101,21 +111,36 @@ class User {
 		$this->name = $name;
 	}
 
-	public function signIn($working_on = '') {
+	public function setNick($nick) {
+		$this->nick = $nick;
+	}
+
+	public function setTask($task) {
+		switch($this->status) {
+			case ON:
+				$this->task = $task;
+				break;
+			default:
+				return 'You can\'t set your task while being off.';
+				break;
+		}
+	}
+
+	public function signIn($task = '') {
 
 		switch($this->status) {
 			case ON:
-				return 'You are already on.';
+				return 'You are already working.';
 				break;
 			case AWAY:
-				return 'You are already on (and away actually).';
+				return 'You are already working (and away actually).';
 				break;
 		}
 
 		$this->status = ON;
 		$this->sign_in = time();
-		if(strlen($working_on)) {
-			$this->working_on = $working_on;
+		if(strlen($task)) {
+			$this->task = $task;
 		}
 	}
 

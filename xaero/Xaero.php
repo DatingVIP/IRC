@@ -47,6 +47,7 @@ class Xaero extends Robot {
 					'@name <name> - Sets your name',
 					'@off - Signs you off',
 					'@on [task] - Signs you in and sets your current task',
+					'@task <task> - Sets your task',
 					'@who - Lists users and their statuses'
 				);
 				break;
@@ -88,15 +89,25 @@ class Xaero extends Robot {
 				$response = $this->users[$nick]->signIn($working_on);
 				break;
 
+			case 'task':
+				if(count($arguments)) {
+					$task = implode(' ', $arguments);
+					$response = $this->users[$nick]->setTask($task);
+				}
+				break;
+
 			case 'who':
 				$response = array();
 				foreach($this->users as $user) {
-					$response[] = $user->getStatus();
+					$status = $user->getStatus();
+					if($status) {
+						$response[] = $status;
+					}
 				}
 				break;
 		}
 
-		if(isset($response)) {
+		if(is_array($response) || strlen($response)) {
 			return $response;
 		}
 	}
@@ -131,16 +142,23 @@ class Xaero extends Robot {
 				}
 			} else {
 				$message = new Message($line);
+				$nick = $message->getNick();
+				$text = trim($message->getText());
+				$where = strpos($message->getChannel(), '#') !== false ? $message->getChannel() : $message->getNick();
+				if($message->getType() == 'NICK') {
+					if(isset($this->users[$nick])) {
+						$this->users[$text] = $this->users[$nick];
+						$this->users[$text]->setNick($text);
+						unset($this->users[$nick]);
+					}
+				}
 				if($message->getType() == 'PRIVMSG') {
-					$nick = $message->getNick();
 					if(!isset($this->users[$nick])) {
 						$this->users[$nick] = new User($nick);
 					}
-					$text = trim($message->getText());
 					if(!strcmp($text[0], '@')) {
 						$response = $this->command($message);
 						if(isset($response)) {
-							$where = strpos($message->getChannel(), '#') !== false ? $message->getChannel() : $message->getNick();
 							if(is_array($response)) {
 								foreach($response as $text) {
 									$this->connection->msg($where, $text);
@@ -149,7 +167,7 @@ class Xaero extends Robot {
 								$this->connection->msg($where, $response);
 							}
 						}
-					} else {
+					} elseif(strpos($where, '#') !== false) {
 						$chat = new Chat($message->getNick(), $text);
 						$this->chats[] = $chat;
 					}
