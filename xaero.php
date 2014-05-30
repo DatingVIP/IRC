@@ -11,5 +11,5 @@ set_time_limit(0);
 $connection = new Connection('irc.datingvip.com', 9867, true);
 $connection->setLogger(new Log());
 $xaero = new Xaero($connection, new Pool(4));
-$xaero->login('xaero')->join('#devs')->loop();
+$xaero->login('xaero2')->join('#test')->loop();
 ?>

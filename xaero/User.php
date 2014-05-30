@@ -18,6 +18,8 @@ class User {
 	private $away_until = 0;
 	private $away_reason = '';
 
+	private $off_time = 0;
+
 	public function __construct($nick) {
 		$this->nick = $nick;
 	}
@@ -60,6 +62,11 @@ class User {
 
 	public function getStatus() {
 		if($this->sign_in || $this->sign_out) {
+			if($this->off_time > 0) {
+				if(time() > $this->off_time) {
+					$this->signOut();
+				}
+			}
 			if($this->status == AWAY) {
 				if($this->away_until > 0 && time() >= $this->away_until) {
 					$this->back();
@@ -115,6 +122,18 @@ class User {
 		$this->nick = $nick;
 	}
 
+	public function setOffTime($time = 0) {
+		if($time === 0 && $this->off_time > 0) {
+			if(time() > $this->off_time) {
+				$this->signOut();
+			} else {
+				$this->off_time = 0;
+			}
+		} else {
+			$this->off_time = time() + $time;
+		}
+	}
+
 	public function setTask($task) {
 		switch($this->status) {
 			case ON:
@@ -139,6 +158,7 @@ class User {
 
 		$this->status = ON;
 		$this->sign_in = time();
+		$this->task = $task;
 		if(strlen($task)) {
 			$this->task = $task;
 		}
@@ -157,6 +177,8 @@ class User {
 
 		$this->status = OFF;
 		$this->sign_out = time();
+		$this->task = '';
+		$this->off_time = 0;
 	}
 }
 ?>

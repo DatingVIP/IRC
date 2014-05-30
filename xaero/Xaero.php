@@ -48,7 +48,7 @@ class Xaero extends Robot {
 					'@off - Signs you off',
 					'@on [task] - Signs you in and sets your current task',
 					'@task <task> - Sets your task',
-					'@who - Lists users and their statuses'
+					'@who [nick] - Lists users and their statuses, optionally filtered by nick'
 				);
 				break;
 
@@ -97,11 +97,19 @@ class Xaero extends Robot {
 				break;
 
 			case 'who':
-				$response = array();
-				foreach($this->users as $user) {
-					$status = $user->getStatus();
-					if($status) {
-						$response[] = $status;
+				if(count($arguments)) {
+					$nick = array_shift($arguments);
+					if(isset($this->users[$nick])) {
+						$response = $this->users[$nick]->getStatus();
+					}
+				}
+				else {
+					$response = array();
+					foreach($this->users as $user) {
+						$status = $user->getStatus();
+						if($status) {
+							$response[] = $status;
+						}
 					}
 				}
 				break;
@@ -145,14 +153,24 @@ class Xaero extends Robot {
 				$nick = $message->getNick();
 				$text = trim($message->getText());
 				$where = strpos($message->getChannel(), '#') !== false ? $message->getChannel() : $message->getNick();
-				if($message->getType() == 'NICK') {
+				if($message->getType() == 'JOIN') {
+					if(isset($this->users[$nick])) {
+						$this->users[$nick]->setOffTime();
+					}
+				}
+				elseif($message->getType() == 'PART' || $message->getType() == 'QUIT') {
+					if(isset($this->users[$nick])) {
+						$this->users[$nick]->setOffTime(600);
+					}
+				}
+				elseif($message->getType() == 'NICK') {
 					if(isset($this->users[$nick])) {
 						$this->users[$text] = $this->users[$nick];
 						$this->users[$text]->setNick($text);
 						unset($this->users[$nick]);
 					}
 				}
-				if($message->getType() == 'PRIVMSG') {
+				elseif($message->getType() == 'PRIVMSG') {
 					if(!isset($this->users[$nick])) {
 						$this->users[$nick] = new User($nick);
 					}
