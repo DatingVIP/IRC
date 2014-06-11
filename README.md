@@ -26,13 +26,13 @@ class Log implements Logger {
 	public function onReceive($line) { printf("< %s\n", $line); }
 }
 
-class Respond extends Responder {
+class Repeat extends Task {
 	public function __construct(Connection $irc, Message $msg) {
 		$this->irc = $irc;
 		$this->msg = $msg;
 	}
 	
-	public function onRespond() {
+	public function __invoke() {
 		/* we can do whatever we want here: 
 			search docs, take as long as we want/need */
 		$this->irc->msg(
@@ -61,7 +61,7 @@ class Listen implements Listener {
 			$msg->getNick() == $this->nick) {
 			/* returning a responder object 
 				threads the response */
-			return new Respond($irc, $msg);
+			return new Repeat($irc, $msg);
 		}
 	}
 	
@@ -89,3 +89,63 @@ $robot->login("bot")
 	->loop();
 ?>
 ```
+
+The example code above shows how to use the Listener and Task interfaces to respond asynchronously to specific messages.
+
+In addition, this package includes a Manager interface for the Robot, executed synchronously by the Robot during execution, it allows the programmer to perform
+administration that must be performed in the same context as the Robot.
+
+```php
+<?php
+require_once("vendor/autoload.php");
+
+use DatingVIP\IRC\Connection;
+use DatingVIP\IRC\Listener;
+use DatingVIP\IRC\Logger;
+use DatingVIP\IRC\Message;
+use DatingVIP\IRC\Task;
+use DatingVIP\IRC\Robot;
+use DatingVIP\IRC\Manager;
+
+/* ... */
+
+class Manage implements Manager {
+
+	public function onStartup(Robot $robot) {
+		printf("startup\n");
+	}
+
+	public function onJoin  (Robot $robot, Message $message) {}
+	public function onNick  (Robot $robot, Message $message) {}
+	public function onPart  (Robot $robot, Message $message) {}
+	public function onPriv  (Robot $robot, Message $message) {}
+
+	public function onShutdown(Robot $robot) {
+		printf("shutdown\n");
+	}
+}
+
+set_time_limit(0);
+
+/* open connection to server */
+$connection = new Connection
+	("irc.datingvip.com", 9867, true);
+
+/* make sure we see all input/output */
+$connection->setLogger(new Log());
+
+/* create robot with default pool */
+$robot = new Robot($connection, new Pool(4), new Manage());
+
+/* add listeners */
+$robot->addListener(
+	new Listen("krakjoe"));
+
+/* login, join channels and enter main loop */
+$robot->login("bot")
+	->join("#devs")
+	->loop();
+?>
+```
+
+The code above shows how to employ both the Listener and Manager functionality.

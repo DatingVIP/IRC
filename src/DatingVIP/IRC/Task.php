@@ -1,27 +1,26 @@
 <?php
 namespace DatingVIP\IRC;
 
-abstract class Responder extends \Threaded {
+abstract class Task extends \Threaded {
 /**
  * Executed asynchronously by Pool to be implemented by programmer
  * @returns void
  */
-	abstract public function onRespond();
+	abstract public function __invoke();
 
 /**
  * Executed by Pool, ensures garbage is set after execution
  */
 	final public function run() { 
-		$this->onRespond();
-		$this
-			->setGarbage();
+		$this();
+		$this->setGarbage();
 	}
 
 /**
  * Tells the Pool this object is ready for collection
  * @returns boolean
  */
-	final public    function isGarbage()  { 
+	final public function isGarbage()  { 
 		return $this->garbage; 
 	}
 

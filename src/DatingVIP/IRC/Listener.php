@@ -6,7 +6,7 @@ interface Listener {
  * Receives Messages from Connection
  * @param Connection irc
  * @param Message msg
- * @return Responder
+ * @return Task
  */
 	public function onReceive(Connection $irc, Message $msg);
 }
