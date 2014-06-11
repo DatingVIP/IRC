@@ -18,7 +18,7 @@ use DatingVIP\IRC\Connection;
 use DatingVIP\IRC\Listener;
 use DatingVIP\IRC\Logger;
 use DatingVIP\IRC\Message;
-use DatingVIP\IRC\Responder;
+use DatingVIP\IRC\Task;
 use DatingVIP\IRC\Robot;
 
 class Log implements Logger {
@@ -59,8 +59,8 @@ class Listen implements Listener {
 	public function onReceive(Connection $irc, Message $msg) {
 		if ($msg->getType() == "PRIVMSG" &&
 			$msg->getNick() == $this->nick) {
-			/* returning a responder object 
-				threads the response */
+			/* returning a Task object 
+				threads the work */
 			return new Repeat($irc, $msg);
 		}
 	}
